@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "framework.h"
 #include "Shekhovtsova_Server.h"
+#include "Server.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -34,6 +35,7 @@ int main()
         else
         {
             // TODO: code your application's behavior here.
+            Server server;
         }
     }
     else

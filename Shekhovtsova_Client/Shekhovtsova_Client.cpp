@@ -4,11 +4,16 @@
 #include "pch.h"
 #include "framework.h"
 #include "Shekhovtsova_Client.h"
+#include "Client.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+void init()
+{
+    Client client;
+}
 
 // The one and only application object
 
@@ -34,6 +39,7 @@ int main()
         else
         {
             // TODO: code your application's behavior here.
+            init();
         }
     }
     else
