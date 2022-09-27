@@ -10,6 +10,7 @@ private:
 	map<int, shared_ptr<Session>> sessions;
 
 	void ProcessClient(SOCKET hSock);
+	void IsActive();
 
 public:
 	Server();

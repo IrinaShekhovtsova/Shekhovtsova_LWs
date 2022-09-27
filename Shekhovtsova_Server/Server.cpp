@@ -9,7 +9,7 @@ void Server::ProcessClient(SOCKET hSock)
 	s.Attach(hSock);
 	Message m;
 	int messageType = m.receive(s);
-	cout << "to: " << m.header.to << " msg from: " << m.header.from << " msg type: " << m.header.type << " msg type: " << messageType << endl;
+
 	switch (messageType)
 	{
 	case MT_INIT:
@@ -17,14 +17,15 @@ void Server::ProcessClient(SOCKET hSock)
 		auto session = make_shared<Session>(++maxID);
 		sessions[session->id] = session;
 		Message::send(s, session->id, MR_BROKER, MT_INIT);
-		cout << "Client " << session->id << "connected." << endl;
+		session->updateLastInteraction();
+		cout << "Client " << session->id << "connected" << endl;
 		break;
 	}
 	case MT_EXIT:
 	{
 		sessions.erase(m.header.from);
 		Message::send(s, m.header.from, MR_BROKER, MT_CONFIRM);
-		cout << "Client " << m.header.from << "disconnected." << endl;
+		cout << "Client " << m.header.from << "disconnected" << endl;
 		break;
 	}
 	case MT_GETDATA:
@@ -33,15 +34,40 @@ void Server::ProcessClient(SOCKET hSock)
 		if (iSession != sessions.end())
 		{
 			iSession->second->send(s);
+			iSession->second->updateLastInteraction();
 		}
 		break;
 	}
-	
+	case MT_GETUSERS:
+	{
+		string str = "";
+		auto iSession = sessions.find(m.header.from);
+		if (iSession != sessions.end())
+		{
+			for (auto& [id, session] : sessions)
+			{
+				if (id != m.header.from)
+				{
+					str.append("Client ");
+					str.append(to_string(session->id));
+					str.append(", last action ");
+					str.append(to_string(session->inActivity()));
+					str.append(" seconds ago");
+					str.append("\n");
+				}
+			}
+			Message ms = Message::send(m.header.from, MT_GETUSERS, str);
+			iSession->second->add(ms);
+			iSession->second->updateLastInteraction();
+		}
+		break;
+	}
 	default:
 	{
 		auto iSessionFrom = sessions.find(m.header.from);
 		if (iSessionFrom != sessions.end())
 		{
+
 			auto iSessionTo = sessions.find(m.header.to);
 			if (iSessionTo != sessions.end())
 			{
@@ -55,15 +81,36 @@ void Server::ProcessClient(SOCKET hSock)
 						session->add(m);
 				}
 			}
+			iSessionFrom->second->updateLastInteraction();
 		}
 		break;
 	}
 	}
 }
 
+void Server::IsActive()
+{
+	while (true)
+	{
+		for (auto& [id, session] : sessions)
+		{
+			if (!session->stillActive())
+			{
+				cout << "Time out. Client " << id << "disconnected" << endl;
+				sessions.erase(id);
+				break;
+			}
+		}
+		Sleep(1000);
+	}
+}
+
 Server::Server()
 {
 	AfxSocketInit();
+
+	
+
 	CSocket server;
 	server.Create(12345);
 	while (true)
@@ -75,4 +122,7 @@ Server::Server()
 		thread t(&Server::ProcessClient, this, s.Detach());
 		t.detach();
 	}
+
+	thread clientConnection(&Server::IsActive, this);
+	clientConnection.detach();
 }

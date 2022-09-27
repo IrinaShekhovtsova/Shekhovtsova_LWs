@@ -4,7 +4,8 @@
 class Session
 {
 public:
-	int id; // идентификатор клиента; приемная очередь и входная очередь
+	int id; // client id 
+	system_clock::time_point lastInteraction;
 	queue<Message> messages;
 
 	CCriticalSection cs;
@@ -32,5 +33,11 @@ public:
 			messages.pop();
 		}
 	}
+
+	void updateLastInteraction();
+
+	bool stillActive();
+
+	int inActivity();
 };
 

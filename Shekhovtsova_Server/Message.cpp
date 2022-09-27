@@ -25,7 +25,7 @@ void Message::send(CSocket& s, int to, int from, int type, const string& data)
 	m.send(s);
 }
 
-Message Message::send(int to, int type, const string& data)
+Message Message::send(int to, int type, const string& data) // client function
 {
 	CSocket s;
 	s.Create();
