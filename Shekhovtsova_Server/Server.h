@@ -14,5 +14,6 @@ private:
 
 public:
 	Server();
+	static int getMaxID();
 };
 

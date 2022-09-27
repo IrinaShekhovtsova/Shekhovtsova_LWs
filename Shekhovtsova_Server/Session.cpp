@@ -10,7 +10,7 @@ void Session::updateLastInteraction()
 
 bool Session::stillActive()
 {
-	if (this->inActivity() > 15)
+	if (this->inActivity() > 15000)
 		return false;
 	else
 		return true;
@@ -19,6 +19,6 @@ bool Session::stillActive()
 int Session::inActivity()
 {
 	auto now = system_clock::now();
-	auto intSeconds = duration_cast<seconds>(now - lastInteraction);
+	auto intSeconds = duration_cast<milliseconds>(now - lastInteraction);
 	return intSeconds.count();
 }

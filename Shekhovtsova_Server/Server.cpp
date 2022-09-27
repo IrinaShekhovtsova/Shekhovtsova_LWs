@@ -52,7 +52,7 @@ void Server::ProcessClient(SOCKET hSock)
 					str.append(to_string(session->id));
 					str.append(", last action ");
 					str.append(to_string(session->inActivity()));
-					str.append(" seconds ago");
+					str.append(" ms ago");
 					str.append("\n");
 				}
 			}
@@ -108,9 +108,6 @@ void Server::IsActive()
 Server::Server()
 {
 	AfxSocketInit();
-
-	
-
 	CSocket server;
 	server.Create(12345);
 	while (true)
@@ -125,4 +122,9 @@ Server::Server()
 
 	thread clientConnection(&Server::IsActive, this);
 	clientConnection.detach();
+}
+
+int Server::getMaxID()
+{
+	return maxID;
 }
