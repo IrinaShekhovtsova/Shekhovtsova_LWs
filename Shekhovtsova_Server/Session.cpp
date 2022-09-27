@@ -10,10 +10,11 @@ void Session::updateLastInteraction()
 
 bool Session::stillActive()
 {
-	if (this->inActivity() > 15000)
+	if (this->inActivity() > 10000)
 		return false;
 	else
 		return true;
+
 }
 
 int Session::inActivity()

@@ -94,7 +94,7 @@ void Server::IsActive()
 	{
 		for (auto& [id, session] : sessions)
 		{
-			if (!session->stillActive())
+			if (!(session->stillActive()))
 			{
 				cout << "Time out. Client " << id << "disconnected" << endl;
 				sessions.erase(id);
@@ -107,6 +107,10 @@ void Server::IsActive()
 
 Server::Server()
 {
+
+	thread clientConnection(&Server::IsActive, this);
+	clientConnection.detach();
+
 	AfxSocketInit();
 	CSocket server;
 	server.Create(12345);
@@ -120,8 +124,7 @@ Server::Server()
 		t.detach();
 	}
 
-	thread clientConnection(&Server::IsActive, this);
-	clientConnection.detach();
+	
 }
 
 int Server::getMaxID()
