@@ -1,12 +1,13 @@
 #pragma once
-
+#pragma once
+#include "pch.h"
 #include "Message.h"
 #include "Session.h"
 
 class Server
 {
 private:
-	static int maxID;
+	int maxID = MR_USER;
 	map<int, shared_ptr<Session>> sessions;
 
 	void ProcessClient(SOCKET hSock);
@@ -14,6 +15,6 @@ private:
 
 public:
 	Server();
-	static int getMaxID();
+	int getMaxID();
 };
 

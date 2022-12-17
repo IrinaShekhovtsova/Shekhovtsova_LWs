@@ -1,26 +1,47 @@
 #include "pch.h"
 #include "Server.h"
 
-int Server::maxID = MR_USER;
-
 void Server::ProcessClient(SOCKET hSock)
 {
 	CSocket s;
 	s.Attach(hSock);
 	Message m;
-	int messageType = m.receive(s);
 
-	switch (messageType)
+	switch (m.receive(s))
 	{
 	case MT_INIT:
 	{
-		auto session = make_shared<Session>(++maxID);
-		sessions[session->id] = session;
-		Message::send(s, session->id, MR_BROKER, MT_INIT);
-		session->updateLastInteraction();
-		cout << "Client " << session->id << "connected" << endl;
+		if (m.header.from != 0)
+		{
+			if (sessions.find(m.header.from) != sessions.end()) {
+				Message::send(s, m.header.from, MR_BROKER, MT_INIT);
+				cout << "Client " << m.header.from << " reconnected" << endl;
+			}
+			else {
+				Message::send(s, 0, MR_BROKER, MT_INIT);
+				cout << "Connection for Client " << m.header.from << " failed." << endl;
+			}
+		}
+		else {
+			auto session = make_shared<Session>(++maxID);
+			sessions[session->id] = session;
+			Message::send(s, session->id, MR_BROKER, MT_INIT);
+			session->updateLastInteraction();
+			cout << "Client " << session->id << " connected" << endl;
+		}
 		break;
 	}
+
+	case MT_INITSTORAGE:
+	{
+		auto session = make_shared<Session>(MR_STORAGE);
+		sessions[session->id] = session;
+		Message::send(s, session->id, MR_BROKER, MT_INITSTORAGE);
+		session->updateLastInteraction();
+		cout << "Storage connected." << endl;
+		break;
+	}
+
 	case MT_EXIT:
 	{
 		sessions.erase(m.header.from);
@@ -38,6 +59,33 @@ void Server::ProcessClient(SOCKET hSock)
 		}
 		break;
 	}
+	
+	case MT_GETLAST:
+	{
+		if (m.header.from == MR_STORAGE)
+		{
+			auto iSessionTo = sessions.find(m.header.to);
+			if (iSessionTo != sessions.end())
+			{
+				Message ms = Message(m.header.to, MR_BROKER, MT_GETLAST, m.data);
+				iSessionTo->second->add(ms);
+			}
+		}
+		else
+		{
+			auto iSessionFrom = sessions.find(m.header.from);
+			auto StorageSession = sessions.find(MR_STORAGE);
+			if (StorageSession != sessions.end() && iSessionFrom != sessions.end())
+			{
+				iSessionFrom->second->updateLastInteraction();
+				Message ms = Message(MR_STORAGE, m.header.from, MT_GETLAST);
+				StorageSession->second->add(ms);
+			}
+		}
+
+		break;
+	}
+	
 	case MT_GETUSERS:
 	{
 		string str = "";
@@ -46,7 +94,7 @@ void Server::ProcessClient(SOCKET hSock)
 		{
 			for (auto& [id, session] : sessions)
 			{
-				if (id != m.header.from)
+				if (id != m.header.from && id != MR_STORAGE)
 				{
 					str.append("Client ");
 					str.append(to_string(session->id));
@@ -65,20 +113,33 @@ void Server::ProcessClient(SOCKET hSock)
 	default:
 	{
 		auto iSessionFrom = sessions.find(m.header.from);
-		if (iSessionFrom != sessions.end())
+		auto StorageSession = sessions.find(MR_STORAGE);
+		if (iSessionFrom != sessions.end() && m.header.from != MR_STORAGE)
 		{
 
 			auto iSessionTo = sessions.find(m.header.to);
 			if (iSessionTo != sessions.end())
 			{
 				iSessionTo->second->add(m);
+				if (StorageSession != sessions.end())
+				{
+					m.data = "{\n\tto: " + to_string(m.header.to) + "\n\tfrom: " + to_string(m.header.from) + "\n\tmsg: " + m.data + "\n}";
+					Message ms = Message(MR_BROKER, m.header.to, MT_DATA, m.data);
+					StorageSession->second->add(ms);
+				}
 			}
 			else if (m.header.to == MR_ALL)
 			{
 				for (auto& [id,session] : sessions)
 				{
-					if (id != m.header.from)
+					if (id != m.header.from && id != MR_STORAGE)
 						session->add(m);
+						if (StorageSession != sessions.end())
+						{
+							m.data = "{\n\tto: " + to_string(id) + "\n\tfrom: " + to_string(m.header.from) + "\n\tmsg: " + m.data + "\n}";
+							Message ms = Message(MR_BROKER, id, MT_DATA, m.data);
+							StorageSession->second->add(ms);
+						}
 				}
 			}
 			iSessionFrom->second->updateLastInteraction();
