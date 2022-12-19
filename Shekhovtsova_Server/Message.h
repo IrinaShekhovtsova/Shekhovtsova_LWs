@@ -16,7 +16,7 @@ enum MessageTypes
 enum MessageRecipients
 {
 	MR_BROKER = 10,
-	MR_STORAGE = 25,
+	MR_STORAGE = 20,
 	MR_ALL = 50,
 	MR_USER = 100   // users' ids from 100 (101,102,...)
 };

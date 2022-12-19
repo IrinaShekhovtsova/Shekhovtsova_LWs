@@ -16,6 +16,7 @@ void Server::ProcessClient(SOCKET hSock)
 			if (sessions.find(m.header.from) != sessions.end()) {
 				Message::send(s, m.header.from, MR_BROKER, MT_INIT);
 				cout << "Client " << m.header.from << " reconnected" << endl;
+				sessions.find(m.header.from)->second->updateLastInteraction();
 			}
 			else {
 				Message::send(s, 0, MR_BROKER, MT_INIT);
@@ -38,7 +39,7 @@ void Server::ProcessClient(SOCKET hSock)
 		sessions[session->id] = session;
 		Message::send(s, session->id, MR_BROKER, MT_INITSTORAGE);
 		session->updateLastInteraction();
-		cout << "Storage connected." << endl;
+		cout << "Storage connected" << endl;
 		break;
 	}
 
@@ -123,23 +124,26 @@ void Server::ProcessClient(SOCKET hSock)
 				iSessionTo->second->add(m);
 				if (StorageSession != sessions.end())
 				{
-					m.data = "{\n\tto: " + to_string(m.header.to) + "\n\tfrom: " + to_string(m.header.from) + "\n\tmsg: " + m.data + "\n}";
+					m.data = "{'" + to_string(m.header.from) + "':'" + m.data + "'}";
 					Message ms = Message(MR_BROKER, m.header.to, MT_DATA, m.data);
 					StorageSession->second->add(ms);
 				}
 			}
 			else if (m.header.to == MR_ALL)
 			{
+				
 				for (auto& [id,session] : sessions)
 				{
 					if (id != m.header.from && id != MR_STORAGE)
+					{
 						session->add(m);
 						if (StorageSession != sessions.end())
 						{
-							m.data = "{\n\tto: " + to_string(id) + "\n\tfrom: " + to_string(m.header.from) + "\n\tmsg: " + m.data + "\n}";
-							Message ms = Message(MR_BROKER, id, MT_DATA, m.data);
+							string mes = "{'" + to_string(m.header.from) + "':'" + m.data + "'}";
+							Message ms = Message(MR_BROKER, id, MT_DATA, mes);
 							StorageSession->second->add(ms);
 						}
+					}
 				}
 			}
 			iSessionFrom->second->updateLastInteraction();
