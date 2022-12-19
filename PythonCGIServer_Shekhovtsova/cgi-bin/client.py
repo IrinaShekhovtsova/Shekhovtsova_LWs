@@ -42,11 +42,10 @@ class msgLogic:
         m = Message.SendMessage(MR_BROKER, MT_GETLAST)
         ms = Message.SendMessage(MR_BROKER, MT_GETDATA)
         if (ms.Header.Type == MT_GETLAST and ms.Header.From == MR_BROKER):
-            self.data = ms.Data
-        print("<br>")
-        print("<textarea rows=10 cols=50 wrap=virtual >")
-        print(f"{self.data}")
-        print("</textarea>")
+            print("<br>")
+            print("<textarea rows=10 cols=50 wrap=virtual >")
+            print(f"{ms.Data}")
+            print("</textarea>")
 
     def printHeader(self):
         print("Content-type: text/html\n")

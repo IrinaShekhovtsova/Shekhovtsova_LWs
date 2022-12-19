@@ -9,29 +9,25 @@ def ProcessMessages():
     while True:
         m = Session.getData()
         if m.Type == MT_DATA:
-            print(f"Пользователь {m.From} отправил: {m.Data}" )
+            print(f"Client {m.From} : {m.Data}" )
         elif m.Type == MT_GETUSERS:
             if(len(m.Data) > 0 ):
-                print("Другие пользователи: ")
+                print("Clients: ")
                 print(m.Data)
             else:
-                print("Других пользователей нет!")
+                print("No clients!")
         elif m.Type == MT_GETLAST:
             if(len(m.Data) > 0 ):
-                data = str(m.Data).replace("'",'"')
-                data = json.loads(data)
-                for item in data:
-                    for key, value in item.items():
-                        print(f"Пользователь {key} отправил: {value}" )
+                print(f"{m.Data}")
         else:
             time.sleep(2)
 
 def Menu():
-        print(" 1. Отправить сообщение пользователю.")
-        print(" 2. Отправить сообщение всем.")
-        print(" 3. Запросить список пользователей.")
-        print(" 4. загрузить все последние сообщения.")
-        print(" 5. Выход")
+        print(" 1. Send msg to user")
+        print(" 2. Send msg to all users")
+        print(" 3. Get user's list")
+        print(" 4. Get last msgs")
+        print(" 5. Exit")
         
 def Client():
     s = Session()
@@ -42,16 +38,16 @@ def Client():
         sw = input()
         if(sw.isdigit()):
             if sw == "1":
-                print('Введите id пользователя: ')
+                print('To Client: ')
                 to = input()
                 if(sw.isdigit()):
-                    print('Введите сообщение: ')
+                    print('Message: ')
                     s.send(int(to), MT_DATA, input())
                 else:
-                    print("Неправильный формат id!")
+                    print("Wrong action!")
 
             elif sw == "2":
-                print('Введите сообщение: ')
+                print('Message: ')
                 s.send(MR_ALL, MT_DATA, input())
 
             elif sw == "3":
